@@ -14,24 +14,31 @@ packageText = """1) What package are you using?
 Supported packages: \x1B[3mFlatpak\x1B[0m
 Planned packages: \x1B[3mWindows, AppImage\x1B[0m
 """
-firmwareHelp = """▼ ▼ ▼
-NOTE: If you want firmware files, do the following: \n1. download firmware from the link below.
-2. Move the firmware directory into the same place where firmware-install.py is \n3. Run firmware-install.py
-▲ ▲ ▲\n\n\n
-"""
-
-
 class color:
     ENDC = '\x1B[0m'
     INFO = '\033[93m'
-
-
+def firmwareHelp():
+    firmwareHelp = """▼ ▼ ▼
+    NOTE: If you want firmware files, do the following: \n1. download firmware from the link below.
+    2. Move the firmware directory into the same place where firmware-install.py is \n3. Run firmware-install.py
+    ▲ ▲ ▲
+    """
+    firmware = input("Do you want instructions on firmware? y/n")
+    if firmware in ["y", "Y", "yes", "Yes"]:
+        print(firmwareHelp, str(base64.b64decode(siteCrypt).decode('utf-8')), "\n\n\n")
+        return
+    elif firmware in ["n", "N", "No", "no"]:
+        print('\n\n\n')
+        return
+    else:
+        print(color.INFO + "INFO 6:", "You did not specify correctly. The program will now exit.")
+        print(color.INFO + "INFO 7:", firmware)
 # -----------------------------
 
 # yuzu setup installer - geck
 # LICENSE: GPL-3.0-or-later
-# Supported packages
 # NOTE: More packages planned in the future
+# Supported packages
 # - Flatpak
 
 pkgType = []
@@ -57,10 +64,9 @@ elif packageType in appimage:
     pkgType.append("APPIMAGE")
 else:
     print("Error in packageType, the program will now exit.")
-    print(color.INFO + "INFO 1:", packageType, color.ENDC)
-    print(color.INFO + "INFO 2:", pkgType, color.ENDC)
+    print(color.INFO + "INFO 1:", packageType, color.ENDC) # Prints var packageType
 
-print("INFO 5:", pkgType)
+print(color.INFO + "INFO 5:", pkgType, color.ENDC) # Prints var pkgType
 
 if pkgType == ["FLATPAK"]:
     filecheck = os.path.isdir(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/data")
@@ -78,74 +84,94 @@ if pkgType == ["FLATPAK"]:
         keyWrite.write(keyDecrypt)
         keyWrite.close()
 
-        firmware = input("Do you want instructions on firmware? y/n")
-        if firmware in ["y", "Y", "yes", "Yes"]:
-            print(firmwareHelp, str(base64.b64decode(siteCrypt).decode('utf-8')))
-        elif firmware in ["n", "N", "No", "no"]:
-            pass
-        else:
-            print(color.INFO + "INFO 6:", "You did not specify correctly. The program will now exit.")
-            print(color.INFO + "INFO 7:", firmware)
+        firmwareHelp()
+        
+        nextStep = 1
+        
+elif pkgType == ["APPIMAGE"]:
+    filecheck = os.path.isdir(os.getenv("HOME") + "/.local/share/yuzu")
+    print(color.INFO + "INFO 3:", filecheck)  # Does the file exist?
+    
+    keyDecrypt = str(base64.b64decode(keyCrypt).decode('utf-8'))
+    print(color.INFO + "INFO 4:", keyDecrypt[:50])  # Did decrypt work?
+    
+    keyCheck = os.path.exists(os.getenv("HOME") + "/.local/share/yuzu/keys/prod.keys")
+    print("INFO 6:", keyCheck)  # Does prod.keys already exist?
+    if keyCheck:
+        print("prod.keys already found. Please delete the file.")
+    else:
+        keyWrite = open(os.getenv("HOME") + "/.local/share/yuzu/keys/prod.keys", "w")
+        keyWrite.write(keyDecrypt)
+        keyWrite.close()
 
-        print("-=- CUSTOMIZATION -=-")
-
-        # Yes I realize this code is repeated and probably a waste of space, but it works so im keeping it
-
-        gpu = str(input("Do you have a NVIDIA, AMD or INTEL GPU?\n TYPE: "))
-        if gpu in ['NVIDIA', 'AMD', 'INTEL']:
-            sf = "backend=0"
-            sf2 = "backend\default=true"
-            rt = "backend=1"
-            rt2 = "backend\default=false"
-            with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'r') as file:
-                data = file.read()
-                data = data.replace(sf, rt)
-                data = data.replace(sf2, rt2)
-            with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'w') as file:
-                file.write(data)
-            print("Done.")
-        try:
-            gpu
-        except NameError:
-            print("GPU isn't defined, error.")
-        else:
-            sf = "gpu_accuracy=1"
-            sf2 = "gpu_accuracy\default=true"
-            rt = "gpu_accuracy=0"
-            rt2 = "gpu_accuracy\default=false"
-            with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'r') as file:
-                data = file.read()
-                data = data.replace(sf, rt)
-                data = data.replace(sf2, rt2)
-            with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'w') as file:
-                file.write(data)
-            print("Done.")
-
-        print("Do you have these monitor sizes?")
-        monitor = str(input("Possible values: 1440, 4k"))
-        if monitor == '1440':
-            sf = "resolution_setup=2"
-            sf2 = "resolution_setup\default=true"
-            rt = "resolution_setup=3"
-            rt2 = "resolution_setup\default=false"
-            with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'r') as file:
-                data = file.read()
-                data = data.replace(sf, rt)
-                data = data.replace(sf2, rt2)
-            with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'w') as file:
-                file.write(data)
-            print("Done.")
-        elif monitor == '4k':
-            sf = "resolution_setup=2"
-            sf2 = "resolution_setup\default=true"
-            rt = "resolution_setup=4"
-            rt2 = "resolution_setup\default=false"
-            with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'r') as file:
-                data = file.read()
-                data = data.replace(sf, rt)
-                data = data.replace(sf2, rt2)
-            with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'w') as file:
-                file.write(data)
-            print("Done.")
+        firmwareHelp()
+        
+        nextStep = 1
 else:
-    print("Error code: 2454")
+    print(color.INFO + "INFO 9:", "Error", color.ENDC) # Error, usually typing
+
+if nextStep == 1:
+    print("-=- CUSTOMIZATION -=-")
+    # Yes I realize this code is repeated and probably a waste of space, but it works so im keeping it
+
+    gpu = str(input("Do you have a NVIDIA, AMD or INTEL GPU?\n TYPE: "))
+    if gpu in ['NVIDIA', 'AMD', 'INTEL']:
+        sf = "backend=0"
+        sf2 = "backend\default=true"
+        rt = "backend=1"
+        rt2 = "backend\default=false"
+        with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'r') as file:
+            data = file.read()
+            data = data.replace(sf, rt)
+            data = data.replace(sf2, rt2)
+        with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'w') as file:
+            file.write(data)
+        print("Done.")
+    try:
+        gpu
+    except NameError:
+        print("GPU isn't defined, error.")
+    else:
+        sf = "gpu_accuracy=1"
+        sf2 = "gpu_accuracy\default=true"
+        rt = "gpu_accuracy=0"
+        rt2 = "gpu_accuracy\default=false"
+        with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'r') as file:
+            data = file.read()
+            data = data.replace(sf, rt)
+            data = data.replace(sf2, rt2)
+        with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'w') as file:
+            file.write(data)
+        print("Done.")
+    print("Do you have these monitor sizes?")
+    monitor = str(input("Possible values: 1440, 4k, none"))
+    if monitor == '1440':
+        sf = "resolution_setup=2"
+        sf2 = "resolution_setup\default=true"
+        rt = "resolution_setup=3"
+        rt2 = "resolution_setup\default=false"
+        with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'r') as file:
+            data = file.read()
+            data = data.replace(sf, rt)
+            data = data.replace(sf2, rt2)
+        with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'w') as file:
+            file.write(data)
+        print("Done.")
+    elif monitor == '4k':
+        sf = "resolution_setup=2"
+        sf2 = "resolution_setup\default=true"
+        rt = "resolution_setup=4"
+        rt2 = "resolution_setup\default=false"
+        with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'r') as file:
+            data = file.read()
+            data = data.replace(sf, rt)
+            data = data.replace(sf2, rt2)
+        with open(os.getenv("HOME") + "/.var/app/org.yuzu_emu.yuzu/config/yuzu/qt-config.ini", 'w') as file:
+            file.write(data)
+        print("Done.")
+    else:
+        pass
+else:
+    print(color.INFO + "INFO 9:", "Error", color.ENDC) # Error, usually typing
+
+print("Install completed.")
